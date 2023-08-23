@@ -20,7 +20,7 @@ categories = {
     'photoprism': 'Photoprism',
     'vandam': 'Vandam',
     'gitea': 'Gitea',
-    'nxtcloud': 'nxtcloud',
+    'nxtcloud': 'NextCloud',
 }
 
 

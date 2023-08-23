@@ -6,11 +6,30 @@
     <title>Dashboard</title>
     <link type=“image/x-icon” rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+    <style>
+        .collapsible {
+            padding: 18px;
+            width: 100%;
+            font-size: 20px;
+        }
 
+        .active, .collapsible:hover {
+            background-color: #ccc;
+        }
+
+        .container_content {
+            padding: 0 18px;
+            display: block;
+            overflow: hidden;
+        }
+
+        .restart_btn {}
+        .stop_btn {}
+        .start_btn{}
+    </style>
 </head>
 <body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
-
 
     <div class="lead text-center display-6 fw-bold bg-dark text-light" style="padding:10px;">
         <h1 style="width: 90%; float: left; transform: translateX(6vw)">
@@ -19,7 +38,7 @@
         <a class="btn btn-warning btn-lg" style="width: 10%" href={{ url_for('server.logout') }} >Logout</a>
     </div>
 
-    <div class="shadow p-3 mb-5 bg-body rounded">
+    <div class="shadow p-3 mb-5 bg-body rounded" id="container_list">
 {#        <table>#}
 {#            <tr> </tr>#}
 {#        </table>#}
