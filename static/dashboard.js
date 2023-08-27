@@ -39,6 +39,25 @@ function message(msg) {
 
 }
 
+function make_row(container) {
+    let html = `<ul id="${container['short_id']}" class="list-group list-group-horizontal row">`;
+    html += `<li class="list-group-item border-0" style="width: 10%"><p class="text-center fw-bold"> ${container['short_id']} </p></li>`;
+    html += `<li class="list-group-item border-0" style="width: 15%"><p class="fw-bold"> ${container['name']} </p></li>`;
+    html += `<li class="list-group-item border-0" style="width: 15%"><p class="fw-bold"> ${container['image']} </p></li>`;
+    html += `<li class="list-group-item border-0" style="width: 10%"><p class="fw-bold"> Created ${container['created_at']} </p></li>`;
+    html += `<li class="list-group-item border-0" style="width: 10%"><p class="fw-bold"> ${container['status_repr']} </p></li>`;
+    if (container['status'] === 'running') {
+        html += `<li class="list-group-item border-0" style="width: 15%">
+                <button type="button" style="width: 100%; height: 50%" class="btn btn-danger fw-bold stop_btn" id="${container['short_id']}"> Stop Container </button>
+                <button type="button" style="width: 100%; height: 50%" class="btn btn-warning fw-bold restart_btn" id="${container['short_id']}"> Restart Container </button>
+                </li>`;
+    } else if (container['status'] === 'exited') {
+        html += `<li class="list-group-item border-0" style="width: 15%"><button type="button" style="width: 100%" class="btn btn-success fw-bold start_btn" id="${container['short_id']}"> Start Container </button></li>`;
+    }
+    html += `<li class="list-group-item border-0" style="width: 25%"><p class="fw-bold"> ${container['ports']} </p></li></ul>`;
+    return html
+}
+
 function set_container_view(containers) {
     const container_area = document.getElementById('container_list');
     let html = "";
@@ -48,24 +67,10 @@ function set_container_view(containers) {
         html += `<div class="container_content"><ul class="list-group list-group-flush">`;
         for (const container of containers[category]) {
             // console.log(container['short_id']);
-            html += '<li class="list-group-item text-center fw-bold"><div><ul class="list-group list-group-horizontal">'
-            html += `<li class="list-group-item border-0" style="width: 10%"><p class="text-center fw-bold"> ${container['short_id']} </p></li>`;
-            html += `<li class="list-group-item border-0" style="width: 15%"><p class="fw-bold"> ${container['name']} </p></li>`;
-            html += `<li class="list-group-item border-0" style="width: 15%"><p class="fw-bold"> ${container['image']} </p></li>`;
-            html += `<li class="list-group-item border-0" style="width: 10%"><p class="fw-bold"> Created ${container['created_at']} </p></li>`;
-            html += `<li class="list-group-item border-0" style="width: 10%"><p class="fw-bold"> ${container['status_repr']} </p></li>`;
-            if (container['status'] === 'running') {
-                html += `<li class="list-group-item border-0" style="width: 15%">
-                        <button type="button" style="width: 100%; height: 50%" class="btn btn-danger fw-bold stop_btn" id="${container['short_id']}"> Stop Container </button>
-                        <button type="button" style="width: 100%; height: 50%" class="btn btn-warning fw-bold restart_btn" id="${container['short_id']}"> Restart Container </button>
-                        </li>`;
-            } else if (container['status'] === 'exited') {
-                html += `<li class="list-group-item border-0" style="width: 15%"><button type="button" style="width: 100%" class="btn btn-success fw-bold start_btn" id="${container['short_id']}"> Start Container </button></li>`;
-            }
-            html += `<li class="list-group-item border-0" style="width: 25%"><p class="fw-bold"> ${container['ports']} </p></li>`;
+            html += `<li class="list-group-item text-center fw-bold"><div>`;
+            html += make_row(container);
 
-
-            html += '</ul></div></li>'
+            html += '</div></li>'
         }
         html += "</ul></div>";
     }
@@ -88,32 +93,90 @@ function set_container_view(containers) {
         });
     }
 
-    let restart_btns = document.getElementsByClassName("restart_btn");
-    let start_btns = document.getElementsByClassName("start_btn");
-    let stop_btns = document.getElementsByClassName("stop_btn");
 
-    for (let btn of restart_btns) {
-        btn.addEventListener("click", function() {
-            console.log(this.id);
-            // TODO: do api call, same for all below. remember add api key, if succeed, update UI, if not, display warning message
-        });
+
+    for (let mode of ["restart_btn", "start_btn", "stop_btn"]) {
+        let btns = document.getElementsByClassName(mode);
+
+        for (let btn of btns) {
+            btn.addEventListener("click", async function() {
+                console.log(api_cache[mode]);
+                const response = await fetch(api_cache[mode], {
+                    method: 'POST',
+                    headers: {
+                        Authentication: api_key_bearer,
+                        "content-type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        container_id: this.id
+                    })
+                });
+                const response_json = await response.json();
+                if (response.status !== 200 || !response.ok) {
+                    if (response_json.contains('message')) {
+                        message(response_json['message']);
+                    }
+                    message("Unknown Error");
+                }
+
+                let row = document.getElementById(this.id);
+
+                row.innerHTML = make_row(response_json);
+                let btn_col = row.children[0].children[5];
+                if (response_json['status'] === 'running') {
+                    let stop_btn = btn_col.children[0];
+                    stop_btn.addEventListener("click", btn_listener_closure("stop_btn", this.id));
+                    let restart_btn = btn_col.children[1];
+                    stop_btn.addEventListener("click", btn_listener_closure("restart_btn", this.id));
+                } else if (response_json['status'] === 'exited') {
+                    let start_btn = btn_col.children[0];
+                    start_btn.addEventListener("click", btn_listener_closure("start_btn", this.id));
+                }
+            });
+        }
     }
-
-    for (let btn of start_btns) {
-        btn.addEventListener("click", function() {
-            console.log(this.id);
-        });
-    }
-
-    for (let btn of stop_btns) {
-        btn.addEventListener("click", function() {
-            console.log(this.id);
-        });
-    }
-
-
 
 }
+
+function btn_listener_closure(api_mode, container_id) {
+    return async function() {
+        console.log(api_cache[api_mode]);
+        const response = await fetch(api_cache[api_mode], {
+            method: 'POST',
+            headers: {
+                Authentication: api_key_bearer,
+                "content-type": "application/json"
+            },
+            body: JSON.stringify({
+                container_id: container_id
+            })
+        });
+        const response_json = await response.json();
+        if (response.status !== 200 || !response.ok) {
+            if (response_json.contains('message')) {
+                message(response_json['message']);
+            }
+            message("Unknown Error");
+        }
+        let row = document.getElementById(this.id);
+        row.innerHTML = make_row(response_json);
+        console.log(row);
+        console.log(row.children);
+        console.log(row.children[0].children[5]);
+        let btn_col = row.children[0].children[5];
+        if (response_json['status'] === 'running') {
+            let stop_btn = btn_col.children[0];
+            stop_btn.addEventListener("click", btn_listener_closure("stop_btn", container_id));
+            let restart_btn = btn_col.children[1];
+            stop_btn.addEventListener("click", btn_listener_closure("restart_btn", container_id));
+        } else if (response_json['status'] === 'exited') {
+            let start_btn = btn_col.children[0];
+            start_btn.addEventListener("click", btn_listener_closure("start_btn", container_id));
+        }
+    }
+}
+
+
 
 async function init() {
     api_key_promise.then((key) => {
@@ -126,3 +189,4 @@ async function init() {
         message(err);
     })
 }
+

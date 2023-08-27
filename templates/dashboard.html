@@ -26,6 +26,7 @@
         .restart_btn {}
         .stop_btn {}
         .start_btn{}
+        .row {}
     </style>
 </head>
 <body>
@@ -50,6 +51,15 @@
         const host = window.location.host;
         const api_key_endpoint = `{{ endpoints.get('api_key') }}`;
         const api_list_containers_endpoint = `{{ endpoints.get('all_containers') }}`;
+        const api_stop_container = `{{ endpoints.get('stop_container') }}`;
+        const api_restart_container = `{{ endpoints.get('restart_container') }}`;
+        const api_start_container = `{{ endpoints.get('start_container') }}`;
+
+        const api_cache = {
+           "stop_btn" : api_stop_container,
+           "start_btn" : api_start_container,
+           "restart_btn" : api_restart_container,
+        }
 
     </script>
 

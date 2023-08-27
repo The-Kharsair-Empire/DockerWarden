@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from .authentication import allowed_addr_only, User, api_key_required
 from flask_login import login_required
 from .docker_wrapper import Docker
@@ -46,19 +46,38 @@ def list_containers():
 @allowed_addr_only
 @api_key_required
 def stop_container():
-    pass
+    container_id = request.get_json().get("container_id", None)
+    docker_client = Docker()
+    docker_success = docker_client.stop_container(container_id)
+    if docker_success:
+        return jsonify(docker_client.get_container_json(container_id)), 200
+    else:
+        return {"message": f"failed to restart container {container_id}, possible that you haven't call list container before"}, 400
 
 
 @api.route(endpoints['start_container'], methods=['POST'])
 @allowed_addr_only
 @api_key_required
 def start_container():
-    pass
+    container_id = request.get_json().get("container_id", None)
+    docker_client = Docker()
+    docker_success = docker_client.start_container(container_id)
+    if docker_success:
+        return jsonify(docker_client.get_container_json(container_id)), 200
+    else:
+        return {"message": f"failed to restart container {container_id}, possible that you haven't call list container before"}, 400
 
 
 @api.route(endpoints['restart_container'], methods=['POST'])
 @allowed_addr_only
 @api_key_required
 def restart_container():
-    pass
+    container_id = request.get_json().get("container_id", None)
+    docker_client = Docker()
+    docker_success = docker_client.restart_container(container_id)
+    if docker_success:
+        return jsonify(docker_client.get_container_json(container_id)), 200
+    else:
+        return {"message": f"failed to restart container {container_id}, possible that you haven't call list container before"}, 400
+
 

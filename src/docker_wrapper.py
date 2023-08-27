@@ -3,6 +3,7 @@ from docker import DockerClient
 import os
 from datetime import datetime
 import math
+from docker.errors import APIError
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -44,6 +45,57 @@ class Docker:
                 self._client = DockerClient(host)
         except ConnectionError:
             print("GG")
+
+    def get_container_json(self, short_id):
+        return Docker.jsonify_container(self._loaded_containers[short_id])
+
+    def restart_container(self, short_id) -> bool:
+        if short_id is None:
+            return False
+        if (container := self._loaded_containers.get(short_id, None)) is not None:
+            try:
+                container.restart()
+                restarted_container = self._client.containers.get(short_id)
+
+                self._loaded_containers[short_id] = restarted_container
+                return True
+
+            except APIError:
+                print("Docker API Error")
+
+        return False
+
+    def stop_container(self, short_id) -> bool:
+        if short_id is None:
+            return False
+        if (container := self._loaded_containers.get(short_id, None)) is not None:
+            try:
+                container.stop()
+                restarted_container = self._client.containers.get(short_id)
+
+                self._loaded_containers[short_id] = restarted_container
+                return True
+
+            except APIError:
+                print("Docker API Error")
+
+        return False
+
+    def start_container(self, short_id) -> bool:
+        if short_id is None:
+            return False
+        if (container := self._loaded_containers.get(short_id, None)) is not None:
+            try:
+                container.start()
+                restarted_container = self._client.containers.get(short_id)
+
+                self._loaded_containers[short_id] = restarted_container
+                return True
+
+            except APIError:
+                print("Docker API Error")
+
+        return False
 
     def load_all_containers(self):
 
@@ -131,6 +183,7 @@ class Docker:
             print(_container.short_id, "-> ", _container.name, f" ({_container.image.tags[0]}): ", _container.status,
                   "\t Created at: ", Docker.convert_time(_container.attrs['Created']), " Ago")
             if _container.status == 'running':
+                print(_container.attrs['State']['StartedAt'])
                 print("Up", Docker.convert_time(_container.attrs['State']['StartedAt']), end="")
                 if 'Health' in _container.attrs['State']:
                     print(f" ({_container.attrs['State']['Health']['Status']})")
@@ -202,4 +255,5 @@ class Docker:
 
 if __name__ == '__main__':
     client = Docker()
-    print(client.load_all_containers())
+    client.load_all_containers()
+    client.print_out()
